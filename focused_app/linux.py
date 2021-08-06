@@ -34,14 +34,22 @@ def get_display_server() -> models.LinuxDisplayServer:
         raise ValueError("Could not detect display server")
 
 
+def get_app_role(app: str) -> Optional[str]:
+    for role in models.role_maps:
+        if app in models.role_maps[role]:
+            return models.AppRole(role)
+    return None
+
+
 def create_linux_window(window: Dict) -> models.LinuxWindow:
     sandboxed = False
     if window["sandboxed_id"]:
         sandboxed = True
     app = window["class"].lower()
+    role = get_app_role(app)
     return models.LinuxWindow(app=app, title=window["title"],
                               pid=window["pid"], focused=window["focused"],
-                              sandboxed=sandboxed, role=window["role"])
+                              sandboxed=sandboxed, role=role)
 
 
 def get_all_windows() -> List[models.LinuxWindow]:

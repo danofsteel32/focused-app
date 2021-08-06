@@ -3,9 +3,6 @@ from enum import Enum
 from typing import List, Optional, Union
 
 
-PDF_VIEWERS = {"evince", "org.pwmt.zathura", "org.kde.okular"}
-
-
 class Platform(str, Enum):
     """Will raise ValueError if not supported platform"""
     LINUX = "Linux"
@@ -30,6 +27,40 @@ class LinuxDisplayServer(str, Enum):
 
 class LinuxDesktop(str, Enum):
     GNOME = "GNOME"
+
+
+class AppRole(str, Enum):
+    BROWSER = "browser"
+    CODE_EDITOR = "code_editor"
+    E_READER = "e_reader"
+    IMAGE_VIEWER = "image_viewer"
+    TERMINAL = "terminal"
+
+
+role_maps = {
+        "browser": {
+            "chromium-browser",
+            "google-chrome",
+            "org.qutebrowser.qutebrowser",
+            "firefox"
+            },
+        "code_editor": {
+            "code"
+            },
+        "e_reader": {
+            "evince",
+            "org.pwmt.zathura",
+            "okular"
+            },
+        "image_viewer": {
+            "imv",
+            "feh"
+            },
+        "terminal": {
+            "foot",
+            "gnome-terminal-server"
+            }
+        }
 
 
 class LinuxBrowser(str, Enum):

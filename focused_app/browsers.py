@@ -38,14 +38,17 @@ def get_active_tab(browser: LinuxBrowser, sandboxed: bool):
         raise ValueError(f"Not a valid url: {active_tab}")
 
 
+# def get_chrome_session_dir(browser: LinuxBrowser, sandboxed: bool) -> Path:
+
+
 def get_chrome_session_file(browser: LinuxBrowser, sandboxed: bool) -> Path:
-    if browser == "Chromium-browser":
+    if browser is LinuxBrowser.CHROMIUM:
         if sandboxed:
             sessions_dir = (".var/app/org.chromium.Chromium/config/"
                             "chromium/Default/Sessions")
         else:
             sessions_dir = ".config/chromium/Default/Sessions"
-    elif browser == "Google-chrome":
+    elif browser is LinuxBrowser.GOOGLE_CHROME:
         sessions_dir = (".config/google-chrome/Default/Sessions")
 
     sessions_path = Path.home() / sessions_dir
