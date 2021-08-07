@@ -6,9 +6,14 @@ authors = ["danofsteel32 <dan@dandavis.dev>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+psutil = "^5.8.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+
+[tool.poetry.scripts]
+lint = "scripts:lint"
+test = "scripts:test"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

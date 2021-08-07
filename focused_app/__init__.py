@@ -1,27 +1,34 @@
 __version__ = '0.1.0'
 
 from platform import system
+from typing import Optional
 
 from . import linux
-from . import browsers
-from . import models
+from . import macos
+from . import windows
+from .common.models import Window, Platform, Context
 
 
-def get_focused_app():
-    platform = models.Platform(system())
-    if platform is models.Platform.LINUX:
-        windows = linux.get_all_windows()
-    return next(w for w in windows if w.focused)
+def get_focused_app() -> Optional[Window]:
+    platform = Platform(system())
+    if platform is Platform.LINUX:
+        return linux.get_focused_app()
+    elif platform is Platform.DARWIN:
+        return macos.get_focused_app()
+    elif platform is Platform.WINDOWS:
+        return windows.get_focused_app()
+    return None
 
 
-def get_focused_context(focused_app: models.LinuxWindow = None):
+def get_focused_context(focused_app: Window = None) -> Context:
     while not focused_app:
         focused_app = get_focused_app()
     if not focused_app:
-        raise ValueError
-    if focused_app.role is models.AppRole.BROWSER:
-        browser = models.LinuxBrowser(focused_app.app)
-        return browsers.get_active_tab(browser, focused_app.sandboxed)
-    elif focused_app.role is models.AppRole.E_READER:
-        return
-    return
+        raise ValueError("Couldn't get focused app")
+    platform = Platform(system())
+    if platform is Platform.LINUX:
+        return linux.get_focused_context()
+    elif platform is Platform.DARWIN:
+        return macos.get_focused_context()
+    elif platform is Platform.WINDOWS:
+        return windows.get_focused_context()

@@ -1,10 +1,11 @@
 # browsers.py
 
+import json
 import re
 import sqlite3
 from pathlib import Path
 from subprocess import check_output
-from .models import LinuxBrowser
+from .models import Browser
 
 # Stolen from Django
 regex = re.compile(
@@ -20,15 +21,15 @@ def is_url(active_tab: str) -> bool:
     return True if regex.match(active_tab) else False
 
 
-def get_active_tab(browser: LinuxBrowser, sandboxed: bool):
+def get_active_tab(browser: Browser, sandboxed: bool):
     """Returns url of active browser tab or raises ValueError if can"t find"""
     active_tab = None
-    if browser is LinuxBrowser.CHROMIUM or browser is LinuxBrowser.GOOGLE_CHROME:
+    if browser is Browser.CHROMIUM or browser is Browser.GOOGLE_CHROME:
         session_file = get_chrome_session_file(browser, sandboxed)
         active_tab = get_chrome_active_tab(session_file)
-    elif browser is LinuxBrowser.FIREFOX:
+    elif browser is Browser.FIREFOX:
         active_tab = get_firefox_active_tab(sandboxed)
-    elif browser is LinuxBrowser.QUTEBROWSER:
+    elif browser is Browser.QUTEBROWSER:
         active_tab = get_qutebrowser_active_tab()
     if not active_tab:
         raise ValueError(f"Couldn't get active tab for browser: {browser}")
@@ -38,17 +39,14 @@ def get_active_tab(browser: LinuxBrowser, sandboxed: bool):
         raise ValueError(f"Not a valid url: {active_tab}")
 
 
-# def get_chrome_session_dir(browser: LinuxBrowser, sandboxed: bool) -> Path:
-
-
-def get_chrome_session_file(browser: LinuxBrowser, sandboxed: bool) -> Path:
-    if browser is LinuxBrowser.CHROMIUM:
+def get_chrome_session_file(browser: Browser, sandboxed: bool) -> Path:
+    if browser is Browser.CHROMIUM:
         if sandboxed:
             sessions_dir = (".var/app/org.chromium.Chromium/config/"
                             "chromium/Default/Sessions")
         else:
             sessions_dir = ".config/chromium/Default/Sessions"
-    elif browser is LinuxBrowser.GOOGLE_CHROME:
+    elif browser is Browser.GOOGLE_CHROME:
         sessions_dir = (".config/google-chrome/Default/Sessions")
 
     sessions_path = Path.home() / sessions_dir
@@ -59,10 +57,18 @@ def get_chrome_session_file(browser: LinuxBrowser, sandboxed: bool) -> Path:
 
 
 def get_chrome_active_tab(session_file: Path):
-    print(session_file)
-    tabs = check_output(["chrome-session-dump", str(session_file)], text=True)
-    active_tab = tabs.strip().split("\n")[-1]
-    return active_tab
+    # TODO figure out why this doesn't work sometimes
+    tabs = check_output(["chrome-session-dump", "-active", str(session_file)], text=True)
+    active_tab = tabs.strip()
+    if is_url(active_tab):
+        return active_tab
+    tabs_json = check_output(["chrome-session-dump", "-json", str(session_file)], text=True)
+    windows = json.loads(tabs_json)["windows"]
+    for w in windows:
+        for t in w["tabs"]:
+            if t["active"]:
+                return t["url"]
+    raise ValueError("chrome-session-dump no url found")
 
 
 def get_firefox_active_tab(sandboxed: bool):
@@ -73,7 +79,6 @@ def get_firefox_active_tab(sandboxed: bool):
     for f in ff_dir.iterdir():
         if f.match("*.default-release"):
             places_db = f / "places.sqlite"
-    print(places_db)
     conn = sqlite3.connect(places_db)
     cur = conn.cursor()
     cur.execute("""SELECT place_id
