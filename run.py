@@ -3,4 +3,3 @@ from focused_app.linux import lib as linux
 
 for w in linux.get_all_windows():
     print(w)
-

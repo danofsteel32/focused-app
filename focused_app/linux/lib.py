@@ -6,7 +6,7 @@ import psutil
 
 from pathlib import Path
 from subprocess import check_output
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from ..common.models import Window, AppRole
 from . import models
@@ -19,40 +19,53 @@ def get_pid_open_files(pid: int) -> List[Path]:
     return []
 
 
+def get_ereader_files(pid: int, extensions: Set[str]) -> List[Path]:
+    open_files = get_pid_open_files(pid)
+    files = [f for f in open_files if f.name.split(".")[-1] in extensions]
+    if not files:
+        raise Exception("No files")
+    return files
+
+
+def get_filepath_from_title(title: str, extensions: Set[str]) -> Optional[Path]:
+    title_elements = title.split(" ")
+    for n, i in enumerate(title_elements):
+        # No spaces in filename
+        if i.split(".")[-1] in extensions:
+            # Already have full path
+            if Path(i).exists():
+                return Path(i)
+            # Gotta find full path
+            else:
+                for p in Path.home().rglob(f"*.{i.split('.')[-1]}"):
+                    if p.name == i:
+                        return p / i
+        # Spaces in filename
+        path_fragment = i.rsplit("/", 1)[0]
+        if Path(path_fragment).exists():
+            file_name = i.rsplit("/", 1)[1]
+            for j in title_elements[n + 1:]:
+                # build up filename str until hit extension
+                file_name += f" {j}"
+                if j.split(".")[-1] in extensions:
+                    return Path(path_fragment) / file_name
+    # Couldn't get filepath
+    return None
+
+
 def get_file_from_window(window: Window) -> Optional[Path]:
 
     if window.role is AppRole.E_READER:
-        open_files = get_pid_open_files(window.pid)
         extensions = {"pdf", "epub"}
-        files = [f for f in open_files if f.name.split(".")[-1] in extensions]
-        if not files:
-            print("No files...")
-            return None
-        elif len(files) > 1:
+        files = get_ereader_files(window.pid, extensions)
+        if len(files) > 1:
             raise Exception("Too many files to pick from")
         return files[0]
 
     elif window.role is AppRole.IMAGE_VIEWER:
         extensions = {"jpg", "jpeg", "png"}
-        for n, i in enumerate(window.title.split(" ")):
-            # No spaces in filename
-            if i.split(".")[-1] in extensions:
-                if Path(i).exists():
-                    return Path(i)
-                else:
-                    # TODO: walk $HOME breadth first try to find full path
-                    print(f"Not sure where {Path(i)} is")
-                    break
-            # Spaces in filename
-            path_fragment = i.rsplit("/", 1)[0]
-            if Path(path_fragment).exists():
-                file_name = i.rsplit("/", 1)[1]
-                for j in window.title.split(" ")[n + 1:]:
-                    if j.split(".")[-1] in extensions:
-                        file_name += f" {j}"
-                        return Path(path_fragment) / file_name
-                    else:
-                        file_name += f" {j}"
+        image_file = get_filepath_from_title(window.title, extensions)
+        return image_file
 
     elif window.role is AppRole.CODE_EDITOR:
         # TODO: support neovim, vscode
