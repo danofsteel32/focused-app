@@ -20,7 +20,6 @@ Getting the active tab in chromium/chrome relies on [chrome-session-dump](https:
 - test escaped strings in gnome windows func
 
 ## TODO
-- fix bug in `linux.get_desktop`
 - split unit tests from integration tests
 - all gnome wayland tests (my workflow)
 - install guide (chrome-session-dump)

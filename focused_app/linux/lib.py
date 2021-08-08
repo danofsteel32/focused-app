@@ -85,8 +85,9 @@ def mock_focused_app(app: str) -> Window:
 
 
 def get_desktop(desktop: str = None) -> models.Desktop:
-    while not desktop:
+    if not desktop:
         desktop = os.getenv("XDG_CURRENT_DESKTOP")
+    if not desktop:
         desktop = os.getenv("XDG_SESSION_DESKTOP")
     if not desktop:
         raise ValueError("Could not detect desktop")
