@@ -16,10 +16,11 @@ def get_focused_context(focused_app: Window = None) -> Context:
         focused_app = get_focused_app()
     if not focused_app:
         raise ValueError
-
     if focused_app.role is AppRole.BROWSER:
         browser = models.Browser(focused_app.app)
         return browsers.get_active_tab(browser, focused_app.sandboxed)
     elif focused_app.role is AppRole.E_READER:
-        return lib.get_file_from_window(focused_app.pid)
+        return lib.get_file_from_window(focused_app)
+    elif focused_app.role is AppRole.IMAGE_VIEWER:
+        return lib.get_file_from_window(focused_app)
     return

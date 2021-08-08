@@ -12,17 +12,14 @@ from ..common.models import Window, AppRole
 from . import models
 
 
-def get_file_from_window(window: Window) -> Optional[Path]:
-    """
-    Really it should return a list of files, then caller can decide which
-    to use if more than one or just files[0] if only one in list.
-    """
+def get_pid_open_files(pid: int) -> List[Path]:
+    for p in psutil.process_iter(["pid", "open_files"]):
+        if p.info["pid"] == pid:
+            return [Path(f.path) for f in p.info["open_files"]]
+    return []
 
-    def get_pid_open_files(pid: int) -> List[Path]:
-        for p in psutil.process_iter(["pid", "open_files"]):
-            if p.info["pid"] == window.pid:
-                return [f.path for f in p.info["open_files"]]
-        return []
+
+def get_file_from_window(window: Window) -> Optional[Path]:
 
     if window.role is AppRole.E_READER:
         open_files = get_pid_open_files(window.pid)
@@ -43,6 +40,7 @@ def get_file_from_window(window: Window) -> Optional[Path]:
                 if Path(i).exists():
                     return Path(i)
                 else:
+                    # TODO: walk $HOME breadth first try to find full path
                     print(f"Not sure where {Path(i)} is")
                     break
             # Spaces in filename
@@ -55,6 +53,7 @@ def get_file_from_window(window: Window) -> Optional[Path]:
                         return Path(path_fragment) / file_name
                     else:
                         file_name += f" {j}"
+
     elif window.role is AppRole.CODE_EDITOR:
         # TODO: support neovim, vscode
         print("Needs to be implemented")

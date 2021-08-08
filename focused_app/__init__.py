@@ -27,7 +27,7 @@ def get_focused_context(focused_app: Window = None) -> Context:
         raise ValueError("Couldn't get focused app")
     platform = Platform(system())
     if platform is Platform.LINUX:
-        return linux.get_focused_context()
+        return linux.get_focused_context(focused_app)
     elif platform is Platform.DARWIN:
         return macos.get_focused_context()
     elif platform is Platform.WINDOWS:
