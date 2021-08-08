@@ -3,6 +3,8 @@
 import ast
 import os
 import psutil
+
+from pathlib import Path
 from subprocess import check_output
 from typing import Dict, List, Optional
 
@@ -10,10 +12,56 @@ from ..common.models import Window, AppRole
 from . import models
 
 
-def get_file_from_pid(pid: int) -> None:
-    for p in psutil.process_iter(["pid"]):
-        if p.info["pid"] == pid:
-            print(p.info)
+def get_file_from_window(window: Window) -> Optional[Path]:
+    """
+    Really it should return a list of files, then caller can decide which
+    to use if more than one or just files[0] if only one in list.
+    """
+
+    def get_pid_open_files(pid: int) -> List[Path]:
+        for p in psutil.process_iter(["pid", "open_files"]):
+            if p.info["pid"] == window.pid:
+                return [f.path for f in p.info["open_files"]]
+        return []
+
+    if window.role is AppRole.E_READER:
+        open_files = get_pid_open_files(window.pid)
+        extensions = {"pdf", "epub"}
+        files = [f for f in open_files if f.name.split(".")[-1] in extensions]
+        if not files:
+            print("No files...")
+            return None
+        elif len(files) > 1:
+            raise Exception("Too many files to pick from")
+        return files[0]
+
+    elif window.role is AppRole.IMAGE_VIEWER:
+        extensions = {"jpg", "jpeg", "png"}
+        for n, i in enumerate(window.title.split(" ")):
+            # No spaces in filename
+            if i.split(".")[-1] in extensions:
+                if Path(i).exists():
+                    return Path(i)
+                else:
+                    print(f"Not sure where {Path(i)} is")
+                    break
+            # Spaces in filename
+            path_fragment = i.rsplit("/", 1)[0]
+            if Path(path_fragment).exists():
+                file_name = i.rsplit("/", 1)[1]
+                for j in window.title.split(" ")[n + 1:]:
+                    if j.split(".")[-1] in extensions:
+                        file_name += f" {j}"
+                        return Path(path_fragment) / file_name
+                    else:
+                        file_name += f" {j}"
+    elif window.role is AppRole.CODE_EDITOR:
+        # TODO: support neovim, vscode
+        print("Needs to be implemented")
+        return None
+    else:
+        raise ValueError(f"{window.role} doesn't make sense for get_file_from_pid()")
+    return None
 
 
 def mock_focused_app(app: str) -> Window:
@@ -57,20 +105,6 @@ def get_app_role(app: str) -> Optional[str]:
         if app in models.role_maps[role]:
             return AppRole(role)
     return None
-
-
-def mapped_app(app: str, role: AppRole):
-    if role is AppRole.BROWSER:
-        return models.Browser(app)
-    elif role is AppRole.CODE_EDITOR:
-        return models.CodeEditor(app)
-    elif role is AppRole.E_READER:
-        return models.Reader(app)
-    elif role is AppRole.IMAGE_VIEWER:
-        return models.ImageViewer(app)
-    elif role is AppRole.TERMINAL:
-        return models.Terminal(app)
-    return
 
 
 def create_window(window: Dict) -> Window:

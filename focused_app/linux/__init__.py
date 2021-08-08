@@ -21,5 +21,5 @@ def get_focused_context(focused_app: Window = None) -> Context:
         browser = models.Browser(focused_app.app)
         return browsers.get_active_tab(browser, focused_app.sandboxed)
     elif focused_app.role is AppRole.E_READER:
-        return lib.get_file_from_pid(focused_app.pid)
+        return lib.get_file_from_window(focused_app.pid)
     return

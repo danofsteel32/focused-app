@@ -1,11 +1,8 @@
-from focused_app
+from focused_app import get_focused_app, get_focused_context
+from focused_app.linux import lib as linux
 
+# print(linux.get_all_windows())
 
-def print_linux_windows():
-    for w in linux.get_all_windows():
-        print(w)
-
-print(mock_focused_app("evince"))
-#print(get_focused_app())
-#print(get_focused_context())
-
+evince = linux.mock_focused_app("evince")
+f = linux.get_file_from_window(evince)
+print(f)

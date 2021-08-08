@@ -24,12 +24,12 @@ def is_url(active_tab: str) -> bool:
 def get_active_tab(browser: Browser, sandboxed: bool):
     """Returns url of active browser tab or raises ValueError if can"t find"""
     active_tab = None
-    if browser is Browser.CHROMIUM or browser is Browser.GOOGLE_CHROME:
+    if browser == Browser.CHROMIUM or browser == Browser.GOOGLE_CHROME:
         session_file = get_chrome_session_file(browser, sandboxed)
         active_tab = get_chrome_active_tab(session_file)
-    elif browser is Browser.FIREFOX:
+    elif browser == Browser.FIREFOX:
         active_tab = get_firefox_active_tab(sandboxed)
-    elif browser is Browser.QUTEBROWSER:
+    elif browser == Browser.QUTEBROWSER:
         active_tab = get_qutebrowser_active_tab()
     if not active_tab:
         raise ValueError(f"Couldn't get active tab for browser: {browser}")
@@ -40,13 +40,13 @@ def get_active_tab(browser: Browser, sandboxed: bool):
 
 
 def get_chrome_session_file(browser: Browser, sandboxed: bool) -> Path:
-    if browser is Browser.CHROMIUM:
+    if browser == Browser.CHROMIUM:
         if sandboxed:
             sessions_dir = (".var/app/org.chromium.Chromium/config/"
                             "chromium/Default/Sessions")
         else:
             sessions_dir = ".config/chromium/Default/Sessions"
-    elif browser is Browser.GOOGLE_CHROME:
+    elif browser == Browser.GOOGLE_CHROME:
         sessions_dir = (".config/google-chrome/Default/Sessions")
 
     sessions_path = Path.home() / sessions_dir
