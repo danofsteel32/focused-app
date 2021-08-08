@@ -9,4 +9,8 @@ def lint() -> None:
 
 
 def test() -> None:
-    check_call(["pytest", "-rP", "tests/"])
+    check_call(["pytest", "-rP", "tests/unit/"])
+
+
+def integration_test() -> None:
+    check_call(["pytest", "-rP", "tests/integration/"])
